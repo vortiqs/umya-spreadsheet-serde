@@ -12,6 +12,7 @@ use quick_xml::{
 
 use super::{
     Extent,
+    GraphicFrame,
     GroupShape,
     MarkerType,
     Picture,
@@ -30,11 +31,12 @@ use crate::{
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug)]
 pub struct OneCellAnchor {
-    from_marker: MarkerType,
-    extent:      Extent,
-    group_shape: Option<Box<GroupShape>>,
-    shape:       Option<Box<Shape>>,
-    picture:     Option<Box<Picture>>,
+    from_marker:   MarkerType,
+    extent:        Extent,
+    group_shape:   Option<Box<GroupShape>>,
+    graphic_frame: Option<Box<GraphicFrame>>,
+    shape:         Option<Box<Shape>>,
+    picture:       Option<Box<Picture>>,
 }
 
 impl OneCellAnchor {
@@ -189,6 +191,23 @@ impl OneCellAnchor {
     }
 
     #[inline]
+    #[must_use]
+    pub fn graphic_frame(&self) -> Option<&GraphicFrame> {
+        self.graphic_frame.as_deref()
+    }
+
+    #[inline]
+    pub fn graphic_frame_mut(&mut self) -> Option<&mut GraphicFrame> {
+        self.graphic_frame.as_deref_mut()
+    }
+
+    #[inline]
+    pub fn set_graphic_frame(&mut self, value: GraphicFrame) -> &mut Self {
+        self.graphic_frame = Some(Box::new(value));
+        self
+    }
+
+    #[inline]
     pub(crate) fn is_image(&self) -> bool {
         self.picture.is_some() || self.group_shape.is_some()
     }
@@ -210,6 +229,11 @@ impl OneCellAnchor {
                         let mut obj = GroupShape::default();
                         obj.set_attributes(reader, e, drawing_relationships);
                         self.set_group_shape(obj);
+                    }
+                    b"xdr:graphicFrame" => {
+                        let mut obj = GraphicFrame::default();
+                        obj.set_attributes(reader, e, drawing_relationships);
+                        self.set_graphic_frame(obj);
                     }
                     b"xdr:sp" | b"sp" => {
                         let mut obj = Shape::default();
@@ -254,6 +278,11 @@ impl OneCellAnchor {
 
         // xdr:grpSp
         if let Some(v) = &self.group_shape {
+            v.write_to(writer, rel_list);
+        }
+
+        // xdr:graphicFrame
+        if let Some(v) = &self.graphic_frame {
             v.write_to(writer, rel_list);
         }
 
