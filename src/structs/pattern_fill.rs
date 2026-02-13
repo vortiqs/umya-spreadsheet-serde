@@ -27,6 +27,7 @@ use crate::{
     },
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Debug, Clone, PartialEq, PartialOrd)]
 pub struct PatternFill {
     pub(crate) pattern_type: EnumValue<PatternValues>,

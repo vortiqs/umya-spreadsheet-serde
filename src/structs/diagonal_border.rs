@@ -8,6 +8,7 @@ use reader::driver::*;
 use std::io::Cursor;
 use writer::driver::*;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Debug, Clone)]
 pub struct DiagonalBorder {
     color: Color,

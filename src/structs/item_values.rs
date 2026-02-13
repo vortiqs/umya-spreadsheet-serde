@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use super::EnumTrait;
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, Eq, Ord, PartialEq, PartialOrd)]
 pub enum ItemValues {
     Average,

@@ -10,6 +10,7 @@ use crate::{
     StringValue, reader::driver::get_attribute, set_string_from_xml, structs::Address, writer::driver::write_start_tag
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug)]
 pub struct WorksheetSource {
     address: Address,

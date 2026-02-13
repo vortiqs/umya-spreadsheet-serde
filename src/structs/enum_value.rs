@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use super::EnumTrait;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct EnumValue<T: EnumTrait + FromStr> {
     value:         Option<T>,

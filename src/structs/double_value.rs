@@ -1,3 +1,4 @@
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug, PartialEq, PartialOrd)]
 pub struct DoubleValue {
     value: Option<f64>,

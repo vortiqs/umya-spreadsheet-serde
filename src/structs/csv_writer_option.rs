@@ -1,6 +1,7 @@
 use super::EnumValue;
 use crate::structs::CsvEncodeValues;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct CsvWriterOption {
     pub(crate) csv_encode_values: EnumValue<CsvEncodeValues>,

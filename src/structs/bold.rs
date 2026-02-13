@@ -16,6 +16,7 @@ use crate::{
     writer::driver::write_start_tag,
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Bold {
     pub(crate) val: BooleanValue,

@@ -1,5 +1,6 @@
 use std::fmt;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum CustomDocumentPropertyValue {
     String(Box<str>),

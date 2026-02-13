@@ -16,6 +16,7 @@ use crate::{
     writer::driver::write_start_tag,
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug)]
 pub struct WorkbookView {
     active_tab: UInt32Value,

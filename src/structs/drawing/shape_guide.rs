@@ -5,6 +5,7 @@ use quick_xml::Writer;
 
 use crate::writer::driver::write_start_tag;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug)]
 pub struct ShapeGuide {
     name: Box<str>,

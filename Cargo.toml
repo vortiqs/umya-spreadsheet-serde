@@ -31,6 +31,7 @@ phf = { version = "0.14", features = ["macros"] }
 quick-xml = { version = "0.41", features = ["serialize"] }
 rand = "0.10"
 rgb = "0.8"
+serde = { version = "1.0", optional = true, features = ["derive"] }
 sha2 = "0.11"
 thousands = "0.2.0"
 zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
@@ -41,3 +42,5 @@ rstest = { version = "0.26.1", default-features = false }
 
 
 [features]
+default = []
+serde = ["dep:serde", "rgb/serde"]

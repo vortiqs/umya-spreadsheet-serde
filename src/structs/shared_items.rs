@@ -31,6 +31,7 @@ use crate::{
     xml_read_loop,
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug)]
 pub struct SharedItems {
     contains_semi_mixed_types: BooleanValue,
@@ -42,6 +43,7 @@ pub struct SharedItems {
     items:                     Vec<SharedItemValue>,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, PartialOrd, Default)]
 pub enum SharedItemValue {
     Bool(bool),

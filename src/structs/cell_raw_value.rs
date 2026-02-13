@@ -6,6 +6,7 @@ use super::{
 };
 use crate::CellErrorType;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, PartialOrd, Default)]
 pub enum CellRawValue {
     String(Box<str>),

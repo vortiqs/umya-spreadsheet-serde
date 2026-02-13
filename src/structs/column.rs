@@ -34,6 +34,7 @@ use crate::{
 /// let mut worksheet = book.sheet_by_name_mut("Sheet1").unwrap();
 /// worksheet.column_dimension_mut("A").set_width(60f64);
 /// ```
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug)]
 pub struct Column {
     col_num:             UInt32Value,

@@ -8,6 +8,7 @@ use quick_xml::Writer;
 
 use super::TextElement;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug, PartialEq, PartialOrd)]
 pub struct RichText {
     rich_text_elements: Vec<TextElement>,

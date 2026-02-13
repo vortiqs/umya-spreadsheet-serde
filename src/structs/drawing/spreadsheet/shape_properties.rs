@@ -38,6 +38,7 @@ use crate::{
     },
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug)]
 pub struct ShapeProperties {
     transform2d:      Option<Box<Transform2D>>,

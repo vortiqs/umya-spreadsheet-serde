@@ -22,6 +22,7 @@ use crate::{
     writer::driver::write_start_tag,
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug)]
 pub struct BevelTop {
     width:  Int64Value,

@@ -21,6 +21,7 @@ use crate::{
     },
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug)]
 pub struct DataBar {
     cfvo_collection:  Vec<ConditionalFormatValueObject>,

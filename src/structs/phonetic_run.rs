@@ -12,6 +12,7 @@ use quick_xml::{
 
 use crate::reader::driver::xml_read_loop;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Debug)]
 pub(crate) struct PhoneticRun {}
 

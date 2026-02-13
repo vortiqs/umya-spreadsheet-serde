@@ -8,6 +8,7 @@ use crate::from_err;
 // https://msdn.microsoft.com/en-us/library/office/ff839168.aspx
 /// An enum to represent all different errors that can appear as
 /// a value in a worksheet cell
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum CellErrorType {
     /// Division by 0 error

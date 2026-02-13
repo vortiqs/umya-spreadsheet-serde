@@ -8,6 +8,7 @@ use crate::{
     traits::AdjustmentValue,
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct ColumnReference {
     num:     u32,

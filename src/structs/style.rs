@@ -75,6 +75,7 @@ use crate::structs::{
 ///     .color_mut()
 ///     .set_argb(Color::COLOR_RED);
 /// ```
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug, PartialEq, PartialOrd)]
 pub struct Style {
     font:             Option<Box<Font>>,

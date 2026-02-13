@@ -18,6 +18,7 @@ use crate::{
     },
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug)]
 pub struct EffectStyleList {
     effect_style_collection: Vec<EffectStyle>,

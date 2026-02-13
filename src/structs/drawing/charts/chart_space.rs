@@ -37,6 +37,7 @@ use crate::{
     xml_read_loop,
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug)]
 pub struct ChartSpace {
     date1904:         Option<Date1904>,

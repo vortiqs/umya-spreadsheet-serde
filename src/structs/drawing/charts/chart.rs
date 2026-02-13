@@ -33,6 +33,7 @@ use crate::{
     xml_read_loop,
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug)]
 pub struct Chart {
     title:                         Option<Title>,

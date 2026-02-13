@@ -37,6 +37,7 @@ use crate::{
     }, xml_read_loop, StringValue
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug)]
 pub struct Comment {
     coordinate: Coordinate,

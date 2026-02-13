@@ -130,6 +130,7 @@ use crate::{
 /// // To change it to an actual line chart, configure as follows
 /// chart.set_grouping(umya_spreadsheet::drawing::charts::GroupingValues::Standard);
 /// ```
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug)]
 pub struct Chart {
     two_cell_anchor:  Box<TwoCellAnchor>,

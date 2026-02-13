@@ -75,6 +75,7 @@ const INDEXED_COLORS: &'static [&'static str] = &[
     "FF333333", //  Standard Colour #56
 ];
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Debug, Clone)]
 pub struct TabColor {
     indexed:     UInt32Value,

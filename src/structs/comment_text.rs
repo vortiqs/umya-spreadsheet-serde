@@ -10,6 +10,7 @@ use quick_xml::Reader;
 use quick_xml::Writer;
 use std::io::Cursor;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug)]
 pub struct CommentText {
     text: Option<Text>,

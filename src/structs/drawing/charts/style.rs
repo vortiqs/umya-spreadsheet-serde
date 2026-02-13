@@ -13,6 +13,7 @@ use crate::{
     writer::driver::write_start_tag,
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Debug)]
 pub struct Style {
     val: ByteValue,

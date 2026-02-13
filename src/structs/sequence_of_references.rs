@@ -1,6 +1,7 @@
 use super::Range;
 use crate::traits::AdjustmentCoordinate;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Debug, Clone)]
 pub struct SequenceOfReferences {
     range_collection: Vec<Range>,

@@ -16,6 +16,7 @@ use crate::{
     writer::driver::write_start_tag,
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Protection {
     locked: BooleanValue,

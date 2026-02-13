@@ -21,6 +21,7 @@ use crate::{
     },
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug)]
 pub struct Color2Type {
     rgb_color_model_hex: Option<Box<RgbColorModelHex>>,

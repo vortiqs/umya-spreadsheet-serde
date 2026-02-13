@@ -10,6 +10,7 @@ use crate::helper::coordinate::CellCoordinates;
 
 // use reader::driver::*;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug)]
 pub struct Table {
     name:             Box<str>,
@@ -253,6 +254,7 @@ impl Table {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug)]
 pub struct TableColumn {
     name:                      String,
@@ -389,6 +391,7 @@ impl TableColumn {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug)]
 pub struct TableStyleInfo {
     name:             String,
@@ -398,12 +401,14 @@ pub struct TableStyleInfo {
     show_col_stripes: ShowStripes,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, Copy)]
 pub enum ShowColumn {
     Show,
     Hide,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, Copy)]
 pub enum ShowStripes {
     Show,

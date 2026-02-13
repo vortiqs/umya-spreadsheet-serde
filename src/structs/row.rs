@@ -33,6 +33,7 @@ use crate::{
     writer::driver::write_start_tag,
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct Row {
     row_num:       UInt32Value,

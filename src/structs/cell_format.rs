@@ -28,6 +28,7 @@ use crate::{
     },
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug)]
 pub(crate) struct CellFormat {
     number_format_id:    UInt32Value,

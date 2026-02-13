@@ -22,6 +22,7 @@ use crate::{
     },
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Debug, Clone)]
 pub struct Properties {
     custom_document_property_list: Vec<CustomDocumentProperty>,

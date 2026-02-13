@@ -21,6 +21,7 @@ use crate::{
     writer::driver::write_start_tag,
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Debug, Clone, PartialEq, PartialOrd)]
 pub struct SheetProtection {
     algorithm_name:        StringValue,

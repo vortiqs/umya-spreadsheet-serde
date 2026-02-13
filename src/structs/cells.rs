@@ -20,6 +20,7 @@ use crate::{
     },
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug)]
 pub struct Cells {
     map:                HashMap<(u32, u32), Box<Cell>>,

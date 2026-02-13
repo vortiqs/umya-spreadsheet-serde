@@ -5,6 +5,7 @@ use quick_xml::Writer;
 use std::io::Cursor;
 use writer::driver::*;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug)]
 pub struct FromMarker {
     col: usize,

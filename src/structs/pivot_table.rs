@@ -3,6 +3,7 @@ use crate::structs::{
     PivotTableDefinition,
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Debug)]
 pub struct PivotTable {
     pivot_table_definition: PivotTableDefinition,

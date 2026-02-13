@@ -36,6 +36,7 @@ pub(crate) enum BordersIndex {
     Horizontal = 6,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Debug, Clone, PartialEq, PartialOrd)]
 pub struct Borders {
     data:          Box<[Border; 7]>,

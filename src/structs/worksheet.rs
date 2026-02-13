@@ -79,6 +79,7 @@ use crate::{
 };
 
 /// A Worksheet Object.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, Default)]
 pub struct Worksheet {
     raw_data_of_worksheet:             Option<RawWorksheet>,

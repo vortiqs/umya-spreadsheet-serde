@@ -102,6 +102,7 @@ static INDEX_TO_COLOR: phf::Map<u32, ARGB8> = phf_map! {
     63u32 => argb!(0xFF, 0x33, 0x33, 0x33), // Standard Colour #56
 };
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Debug, Clone, PartialEq, PartialOrd)]
 pub struct Color {
     automatic:   Option<bool>,
