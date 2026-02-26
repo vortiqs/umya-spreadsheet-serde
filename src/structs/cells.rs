@@ -425,6 +425,28 @@ impl Cells {
     }
 
     #[inline]
+    pub(crate) fn add_fast(&mut self, cell: Cell) {
+        let col_num = cell.coordinate().col_num();
+        let row_num = cell.coordinate().row_num();
+        self.map.insert((row_num, col_num), Box::new(cell));
+    }
+
+    #[inline]
+    pub(crate) fn reserve(&mut self, additional: usize) {
+        self.map.reserve(additional);
+    }
+
+    pub(crate) fn build_indexes(&mut self) {
+        self.row_column_index = self.map.keys().copied().collect();
+        self.column_row_index = self
+            .map
+            .keys()
+            .copied()
+            .map(|(row, col)| (col, row))
+            .collect();
+    }
+
+    #[inline]
     pub(crate) fn remove(&mut self, col_num: u32, row_num: u32) -> bool {
         let k = (row_num, col_num);
         let r = self.map.remove(&k).is_some();

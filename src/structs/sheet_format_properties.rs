@@ -223,7 +223,7 @@ impl SheetFormatProperties {
         set_string_from_xml!(self, e, custom_height, "customHeight");
         set_string_from_xml!(self, e, default_column_width, "defaultColWidth");
         set_string_from_xml!(self, e, default_row_height, "defaultRowHeight");
-        set_string_from_xml!(self, e, dy_descent, "x14ac:dyDescent");
+        set_string_from_xml!(self, e, dy_descent, "dyDescent");
         set_string_from_xml!(self, e, outline_level_column, "outlineLevelCol");
         set_string_from_xml!(self, e, outline_level_row, "outlineLevelRow");
         set_string_from_xml!(self, e, thick_bottom, "thickBottom");

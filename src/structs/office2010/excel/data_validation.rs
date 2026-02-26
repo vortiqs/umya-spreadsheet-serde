@@ -325,7 +325,7 @@ impl DataValidation {
                         obj.set_attributes(reader, e);
                         self.formula2 = Some(Box::new(obj));
                     }
-                    b"xm:sqref" => {
+                    b"sqref" => {
                         let mut obj = ReferenceSequence::default();
                         obj.set_attributes(reader, e);
                         self.reference_sequence = obj;

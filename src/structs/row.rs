@@ -248,7 +248,7 @@ impl Row {
         set_string_from_xml!(self, e, custom_height, "customHeight");
         set_string_from_xml!(self, e, hidden, "hidden");
 
-        if let Some(v) = get_attribute(e, b"x14ac:dyDescent") {
+        if let Some(v) = get_attribute(e, b"dyDescent") {
             if !v.is_empty() {
                 self.descent.set_value_string(v);
             }
@@ -276,7 +276,7 @@ impl Row {
                         true,
                         formula_shared_list
                     );
-                    cells.set_fast(obj);
+                    cells.add_fast(obj);
                 }
             },
             Event::Start(ref e) => {
@@ -290,7 +290,7 @@ impl Row {
                         false,
                         formula_shared_list
                     );
-                    cells.set_fast(obj);
+                    cells.add_fast(obj);
                 }
             },
             Event::End(ref e) => {
