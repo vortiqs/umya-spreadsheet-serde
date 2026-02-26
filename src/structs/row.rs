@@ -43,7 +43,7 @@ pub struct Row {
     thick_bot:     BooleanValue,
     custom_height: BooleanValue,
     hidden:        BooleanValue,
-    style:         Box<Style>,
+    style:         Style,
 }
 impl Default for Row {
     #[inline]
@@ -56,7 +56,7 @@ impl Default for Row {
             thick_bot:     BooleanValue::default(),
             custom_height: BooleanValue::default(),
             hidden:        BooleanValue::default(),
-            style:         Box::new(Style::default()),
+            style:         Style::default(),
         }
     }
 }
@@ -221,13 +221,13 @@ impl Row {
 
     #[inline]
     pub fn set_style(&mut self, value: Style) -> &mut Self {
-        *self.style = value;
+        self.style = value;
         self
     }
 
     #[inline]
     pub(crate) fn has_style(&self) -> bool {
-        *self.style != Style::default()
+        self.style != Style::default()
     }
 
     #[allow(clippy::too_many_arguments)]
