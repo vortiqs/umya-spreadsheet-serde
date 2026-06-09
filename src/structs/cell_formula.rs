@@ -326,8 +326,15 @@ impl CellFormula {
 
                     let root_col_num = parent_col_num;
                     let root_row_num = parent_row_num;
-                    let offset_col_num = self_col_num - root_col_num;
-                    let offset_row_num = self_row_num - parent_row_num;
+                    // A shared-formula sharer can sit left of / above its master
+                    // (ref-holding) cell, so self < root is legal. The offset is
+                    // consumed by adjustment_insert_coordinate, which only shifts
+                    // references at/after `root` (num >= root) — the shift is
+                    // non-negative by construction — so 0 is the correct clamp.
+                    // A raw u32 subtract here underflows: it panics in debug
+                    // builds and wraps to a garbage column/row in release.
+                    let offset_col_num = self_col_num.saturating_sub(root_col_num);
+                    let offset_row_num = self_row_num.saturating_sub(root_row_num);
 
                     let mut token_new = token.clone();
                     let value = adjustment_insert_formula_coordinate(
