@@ -208,12 +208,32 @@ where
     }
 
     let (col, col_lock_flag, _) = if i > col_start {
+        // A valid Excel column is at most XFD (16384, 3 letters). A longer run
+        // of letters — e.g. a function name or identifier mistaken for a
+        // coordinate — overflows `* 26`, which panics under overflow-checks
+        // (debug) and wraps to a garbage column in release. Per this fn's
+        // contract ("returns None if it cannot be parsed"), treat an
+        // out-of-u32-range column as unparseable instead.
         let mut col_num: u32 = 0;
+        let mut col_overflow = false;
         for &b in &bytes[col_start..i] {
             let ch = b.to_ascii_uppercase();
-            col_num = col_num * 26 + (ch - b'A') as u32 + 1;
+            match col_num
+                .checked_mul(26)
+                .and_then(|v| v.checked_add((ch - b'A') as u32 + 1))
+            {
+                Some(v) => col_num = v,
+                None => {
+                    col_overflow = true;
+                    break;
+                }
+            }
         }
-        (Some(col_num), Some(first_dollar), true)
+        if col_overflow {
+            (None, None, false)
+        } else {
+            (Some(col_num), Some(first_dollar), true)
+        }
     } else {
         // No column found — backtrack: the '$' belongs to the row
         if first_dollar {
@@ -230,13 +250,28 @@ where
 
     // Read row digits
     let row_start = i;
+    // Same guard for the row: a digit run that overflows u32 (far beyond
+    // Excel's 1,048,576-row max) is not a valid row — return None rather than
+    // panic (debug) / wrap (release).
     let mut row_num: u32 = 0;
+    let mut row_overflow = false;
     while i < len && bytes[i].is_ascii_digit() {
-        row_num = row_num * 10 + (bytes[i] - b'0') as u32;
-        i += 1;
+        match row_num
+            .checked_mul(10)
+            .and_then(|v| v.checked_add((bytes[i] - b'0') as u32))
+        {
+            Some(v) => {
+                row_num = v;
+                i += 1;
+            }
+            None => {
+                row_overflow = true;
+                break;
+            }
+        }
     }
 
-    let (row, row_lock_flag) = if i > row_start {
+    let (row, row_lock_flag) = if i > row_start && !row_overflow {
         (Some(row_num), Some(row_lock))
     } else {
         (None, None)
