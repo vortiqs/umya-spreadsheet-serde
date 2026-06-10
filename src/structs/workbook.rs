@@ -167,9 +167,10 @@ impl Workbook {
     #[must_use]
     pub fn cell_value_by_address(&self, address: &str) -> Vec<&CellValue> {
         let (sheet_name, range) = split_address(address);
-        self.sheet_by_name(sheet_name)
-            .unwrap()
-            .cell_value_by_range(range)
+        match self.sheet_by_name(sheet_name) {
+            Ok(sheet) => sheet.cell_value_by_range(range),
+            Err(_) => vec![],
+        }
     }
 
     #[inline]
@@ -187,9 +188,10 @@ impl Workbook {
     /// *`Vec<&CellValue>` - `CellValue` List.
     #[inline]
     pub(crate) fn cell_value_by_address_crate(&self, address: &Address) -> Vec<&CellValue> {
-        self.sheet_by_name(address.sheet_name())
-            .unwrap()
-            .cell_value_by_range(&address.range().range())
+        match self.sheet_by_name(address.sheet_name()) {
+            Ok(sheet) => sheet.cell_value_by_range(&address.range().range()),
+            Err(_) => vec![],
+        }
     }
 
     #[inline]
