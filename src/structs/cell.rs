@@ -631,7 +631,13 @@ impl Cell {
                     },
                     b"is" => {
                         if type_value == b"inlineStr" {
-                            self.set_value_crate(&string_value);
+                            // Inline strings are DECLARED text in xlsx (real
+                            // numbers are written t="n"). Store verbatim as
+                            // String instead of guess_typed_data, which turned
+                            // numeric-looking code cells ("36", "10001", "06")
+                            // into Numeric and destroyed the type at the root
+                            // (FIPS/ZCTA/ZIP code-column noise class).
+                            self.set_value_string_crate(&string_value);
                         }
                     }
                     b"c" => return,
