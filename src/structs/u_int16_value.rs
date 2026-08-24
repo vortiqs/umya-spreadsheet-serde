@@ -34,7 +34,16 @@ impl UInt16Value {
 
     #[inline]
     pub(crate) fn set_value_string<S: Into<String>>(&mut self, value: S) -> &mut UInt16Value {
-        self.set_value(value.into().parse::<u16>().unwrap())
+        // Reader input is UNTRUSTED: a malformed or wrongly-typed attribute
+        // must never abort the process. One real case: ECMA-376
+        // `dataField/@subtotal` is a string enum ("count"), and typing it
+        // as a numeric value made every such pivot workbook panic the whole
+        // import. Ignore what will not parse and leave the field at its
+        // default, which is how Excel itself treats junk attributes.
+        if let Ok(v) = value.into().parse::<u16>() {
+            self.set_value(v);
+        }
+        self
     }
 
     #[inline]
