@@ -414,6 +414,7 @@ impl CellFormula {
 
         #[allow(unused_assignments)]
         let mut reference_str = String::new();
+        let mut wrote_ref = false;
         if let Some((start_col, end_col)) = formula_shared_list.get(&self.shared_index.value())
         {
             if coordinate == start_col {
@@ -424,7 +425,22 @@ impl CellFormula {
                     None => start_col.clone(),
                 };
                 attributes.push(("ref", &reference_str).into());
+                wrote_ref = true;
             }
+        }
+
+        // A What-If Data Table anchor carries its own `ref` — the block it drives,
+        // e.g. `<f t="dataTable" ref="AG18:AK22" dt2D="1" dtr="1" r1="C20" r2="C31"/>`.
+        // The reader parses it into `self.reference` (the `b"ref"` arm above) but this
+        // writer only ever emitted `ref` for SHARED formulas, from the lookup above, so
+        // the attribute was dropped and the table reached Excel as a dead block of
+        // static values.
+        //
+        // Guarded on `wrote_ref`: a shared master has BOTH a parsed `self.reference`
+        // and a shared-list-derived one. Emitting both yields a duplicate XML attribute,
+        // which makes Excel repair every workbook that contains shared formulas.
+        if !wrote_ref && self.reference.has_value() {
+            attributes.push(("ref", self.reference.value_str()).into());
         }
 
         let shared_index_str = self.shared_index.value_string();

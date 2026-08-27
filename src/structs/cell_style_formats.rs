@@ -87,7 +87,36 @@ impl CellStyleFormats {
 
     #[inline]
     pub(crate) fn write_to(&self, writer: &mut Writer<Cursor<Vec<u8>>>) {
-        if !self.cell_format.is_empty() {
+        if self.cell_format.is_empty() {
+            // Every `xf` in `cellXfs` carries an `xfId` indexing into THIS element.
+            // A book assembled programmatically (rather than read from a file) has no
+            // cell styles, so this list is empty and the element was omitted entirely
+            // — leaving every `xfId="0"` a dangling index. Excel tolerates it today
+            // only because each `cellXfs/xf` also carries explicit
+            // fontId/fillId/borderId, but it is not valid and every Excel-written
+            // file we have examined emits this element. Emit the default style so
+            // the index resolves.
+            write_start_tag(
+                writer,
+                "cellStyleXfs",
+                vec![("count", "1").into()],
+                false,
+            );
+            write_start_tag(
+                writer,
+                "xf",
+                vec![
+                    ("numFmtId", "0").into(),
+                    ("fontId", "0").into(),
+                    ("fillId", "0").into(),
+                    ("borderId", "0").into(),
+                ],
+                true,
+            );
+            write_end_tag(writer, "cellStyleXfs");
+            return;
+        }
+        {
             // cellStyleXfs
             write_start_tag(
                 writer,
