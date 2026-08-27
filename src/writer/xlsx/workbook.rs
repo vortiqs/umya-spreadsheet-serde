@@ -128,19 +128,27 @@ pub(crate) fn write<W: io::Seek + io::Write>(
     }
 
     // calcPr
-    write_start_tag(
-        &mut writer,
-        "calcPr",
-        vec![
-            ("calcId", "122211").into(),
-            //("calcId", "999999"),
-            //("calcMode", "auto"),
-            //("calcCompleted", if recalc_required {"1"} else {"0"}),
-            //("fullCalcOnLoad", if recalc_required {"0"} else {"1"}),
-            //("forceFullCalc", if recalc_required {"0"} else {"1"}),
-        ],
-        true,
-    );
+    //
+    // `iterate` must be carried through. A workbook with a DELIBERATE circular
+    // reference (LBO: debt -> interest -> cash flow -> debt) sets it, and Excel
+    // converges the model. Writing a bare `calcId` dropped it, so Excel refused to
+    // converge a file it had computed fine before the round trip — we turned a
+    // gap into a broken workbook. Measured 2026-08-27 on a customer model: source
+    // `<calcPr calcId="191028" fullCalcOnLoad="1" iterate="1"/>`, our output
+    // `<calcPr calcId="122211"/>`.
+    let iterate_count_str;
+    let iterate_delta_str;
+    let mut calc_attrs: crate::structs::AttrCollection = vec![("calcId", "122211").into()];
+    if wb.iterate_enabled() {
+        calc_attrs.push(("iterate", "1").into());
+        if let Some((count, delta)) = wb.iterative_calc() {
+            iterate_count_str = count.to_string();
+            iterate_delta_str = delta.to_string();
+            calc_attrs.push(("iterateCount", &iterate_count_str).into());
+            calc_attrs.push(("iterateDelta", &iterate_delta_str).into());
+        }
+    }
+    write_start_tag(&mut writer, "calcPr", calc_attrs, true);
 
     // pivotCaches
     let pivot_cache_definition_collection = wb.pivot_caches();

@@ -47,6 +47,15 @@ pub struct Workbook {
     pivot_caches:          Vec<(Box<str>, Box<str>, Box<str>)>,
     workbook_protection:   Option<Box<WorkbookProtection>>,
     defined_names:         Vec<DefinedName>,
+    /// `<calcPr iterate=.. iterateCount=.. iterateDelta=..>` — Excel's iterative
+    /// calculation settings. A model with a DELIBERATE circular reference (an LBO
+    /// where debt drives interest drives cash flow drives debt) sets these, and
+    /// Excel converges it. The writer previously hardcoded a bare
+    /// `<calcPr calcId="122211"/>`, so a workbook read WITH these settings was
+    /// written back WITHOUT them and Excel then refused to converge a file it had
+    /// computed fine before the round trip.
+    iterative_calc:        Option<(u32, f64)>,
+    iterate_enabled:       bool,
 }
 
 impl Workbook {
@@ -1020,6 +1029,27 @@ impl Workbook {
     #[inline]
     pub fn add_defined_names(&mut self, value: DefinedName) {
         self.defined_names.push(value);
+    }
+
+    /// Whether iterative calculation is enabled (`<calcPr iterate="1">`).
+    #[inline]
+    pub fn iterate_enabled(&self) -> bool {
+        self.iterate_enabled
+    }
+
+    /// `(iterateCount, iterateDelta)` when the workbook specifies them.
+    #[inline]
+    pub fn iterative_calc(&self) -> Option<(u32, f64)> {
+        self.iterative_calc
+    }
+
+    /// Enable iterative calculation on write. `count`/`delta` are Excel's
+    /// convergence limits; pass `None` to emit `iterate` alone and let Excel
+    /// apply its own defaults.
+    #[inline]
+    pub fn set_iterative_calc(&mut self, enabled: bool, count_delta: Option<(u32, f64)>) {
+        self.iterate_enabled = enabled;
+        self.iterative_calc = count_delta;
     }
 
     /// Has `ThreadedComments`.
