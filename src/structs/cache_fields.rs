@@ -70,6 +70,13 @@ impl CacheFields {
                     self.add_list_mut(obj);
                 }
             },
+            // `<cacheField/>` holds a position in the pivot cache; dropping it
+            // misaligns every later field against its cached values.
+            Event::Empty(ref e) => {
+                if e.name().local_name().into_inner() == b"cacheField" {
+                    self.add_list_mut(CacheField::default());
+                }
+            },
             Event::End(ref e) => {
                 if e.name().local_name().into_inner() == b"cacheFields" {
                     return

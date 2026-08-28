@@ -58,9 +58,18 @@ impl DifferentialFormats {
     }
 
     #[inline]
+    /// The style for a `dxfId`.
+    ///
+    /// Returns the default style when `id` is out of range rather than
+    /// panicking: an unusual workbook must not take down the whole import with
+    /// `Option::unwrap()` on a `None` value. A missing differential format
+    /// means "no differential formatting", which the default already expresses.
     pub(crate) fn style(&self, id: usize) -> Style {
-        let differential_format = self.differential_format.get(id).unwrap().clone();
-        differential_format.style()
+        self.differential_format
+            .get(id)
+            .cloned()
+            .unwrap_or_default()
+            .style()
     }
 
     #[inline]
@@ -100,6 +109,18 @@ impl DifferentialFormats {
                     self.set_differential_format(obj);
                 }
             },
+            // `<dxf/>` — an EMPTY differential format. It still occupies a
+            // dxfId slot, so it MUST be pushed: dropping it shifts every later
+            // index and makes `style(id)` read past the end of the vector.
+            //
+            // Do NOT call `set_attributes` here. It runs its own read loop
+            // until `</dxf>`, which a self-closing element never has, so it
+            // would swallow the rest of the document and then panic at EOF.
+            Event::Empty(ref e) => {
+                if e.name().local_name().into_inner() == b"dxf" {
+                    self.set_differential_format(DifferentialFormat::default());
+                }
+            },
             Event::End(ref e) => {
                 if e.name().local_name().into_inner() == b"dxfs" {
                     return
@@ -126,5 +147,76 @@ impl DifferentialFormats {
 
             write_end_tag(writer, "dxfs");
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Parse a `<dxfs>` fragment the way the reader does in production.
+    fn parse(xml: &str) -> DifferentialFormats {
+        let mut reader = Reader::from_str(xml);
+        reader.config_mut().trim_text(false);
+        let mut buf = Vec::new();
+        // advance to the <dxfs> start tag, then hand over
+        loop {
+            match reader.read_event_into(&mut buf) {
+                Ok(Event::Start(ref e)) if e.name().local_name().into_inner() == b"dxfs" => {
+                    let start = e.clone();
+                    let mut obj = DifferentialFormats::default();
+                    obj.set_attributes(&mut reader, &start);
+                    return obj;
+                }
+                Ok(Event::Eof) => panic!("no <dxfs> in fixture"),
+                Ok(_) => {}
+                Err(e) => panic!("xml error: {e:?}"),
+            }
+        }
+    }
+
+    /// A self-closing `<dxf/>` still occupies a dxfId slot.
+    ///
+    /// Regression: the reader handled only `Event::Start`, so every `<dxf/>`
+    /// was dropped. A real customer workbook had 7 dxfs of which 6 were
+    /// self-closing; only 1 was parsed, and a `dxfId="6"` reference then made
+    /// `style()` index past the end and panic, failing the whole import with
+    /// "Internal server error".
+    #[test]
+    fn self_closing_dxf_keeps_its_index() {
+        // exactly the shape from that workbook: 6 empty, 1 with a font colour
+        let xml = concat!(
+            r#"<styleSheet><dxfs count="7">"#,
+            "<dxf/><dxf/><dxf/><dxf/>",
+            r#"<dxf><font><color theme="1"/></font></dxf>"#,
+            "<dxf/><dxf/>",
+            "</dxfs></styleSheet>",
+        );
+        let obj = parse(xml);
+        assert_eq!(
+            obj.differential_format().len(),
+            7,
+            "all 7 dxfs must be parsed, including the self-closing ones"
+        );
+        // The styled entry is dxf[4]; the rest are empty. Asserting WHICH
+        // index carries the style proves the ordering survived, not merely
+        // that seven things were pushed.
+        assert_ne!(
+            obj.style(4),
+            Style::default(),
+            "dxf[4] carries the font colour, so it must not be the default"
+        );
+        assert_eq!(obj.style(6), Style::default(), "dxf[6] is <dxf/>, so default");
+        assert_eq!(obj.style(0), Style::default(), "dxf[0] is <dxf/>, so default");
+    }
+
+    /// An out-of-range dxfId degrades to the default style instead of
+    /// panicking, so one odd workbook cannot take down an entire import.
+    #[test]
+    fn out_of_range_dxf_id_returns_default_style() {
+        let obj = parse(r#"<styleSheet><dxfs count="1"><dxf/></dxfs></styleSheet>"#);
+        assert_eq!(obj.differential_format().len(), 1);
+        let fallback = obj.style(999);
+        assert_eq!(fallback, Style::default());
     }
 }

@@ -91,6 +91,14 @@ impl Fills {
                     self.set_fill(obj);
                 }
             },
+            // `<fill/>` occupies a fillId slot; dropping it shifts every later
+            // fillId. See `differential_formats.rs` for why `set_attributes`
+            // must not be called on an Empty event.
+            Event::Empty(ref e) => {
+                if e.name().local_name().into_inner() == b"fill" {
+                    self.set_fill(Fill::default());
+                }
+            },
             Event::End(ref e) => {
                 if e.name().local_name().into_inner() == b"fills" {
                     return
@@ -117,5 +125,49 @@ impl Fills {
 
             write_end_tag(writer, "fills");
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(xml: &str) -> Fills {
+        let mut reader = Reader::from_str(xml);
+        reader.config_mut().trim_text(false);
+        let mut buf = Vec::new();
+        loop {
+            match reader.read_event_into(&mut buf) {
+                Ok(Event::Start(ref e)) if e.name().local_name().into_inner() == b"fills" => {
+                    let start = e.clone();
+                    let mut obj = Fills::default();
+                    obj.set_attributes(&mut reader, &start);
+                    return obj;
+                }
+                Ok(Event::Eof) => panic!("no <fills> in fixture"),
+                Ok(_) => {}
+                Err(e) => panic!("xml error: {e:?}"),
+            }
+        }
+    }
+
+    /// A self-closing `<fill/>` still occupies a fillId slot.
+    ///
+    /// Cells reference fills by index, so dropping one silently repaints every
+    /// cell below it with the wrong fill.
+    #[test]
+    fn self_closing_fill_keeps_its_index() {
+        let obj = parse(concat!(
+            r#"<fills count="3">"#,
+            "<fill/>",
+            r#"<fill><patternFill patternType="solid"/></fill>"#,
+            "<fill/>",
+            "</fills>",
+        ));
+        assert_eq!(obj.fill().len(), 3, "all three fills must be present");
+        assert!(
+            obj.fill()[1].pattern_fill().is_some(),
+            "the solid fill must still be at fillId 1, not shifted to 0"
+        );
     }
 }

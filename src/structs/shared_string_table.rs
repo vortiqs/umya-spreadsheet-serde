@@ -114,6 +114,19 @@ impl SharedStringTable {
                     n += 1;
                 }
             },
+            // `<si/>` is an EMPTY shared string. Its POSITION is the index
+            // cells refer to, so dropping it shifts every later string and
+            // silently puts the WRONG TEXT in cells — a quiet corruption
+            // rather than a crash. Push a default and advance in step.
+            Event::Empty(ref e) => {
+                if e.name().local_name().into_inner() == b"si" {
+                    let shared_string_item = SharedStringItem::default();
+                    let hash_code = shared_string_item.hash_u64();
+                    self.map.insert(hash_code, n);
+                    self.set_shared_string_item(shared_string_item);
+                    n += 1;
+                }
+            },
             Event::End(ref e) => {
                 if e.name().local_name().into_inner() == b"sst" {
                     return
@@ -146,5 +159,57 @@ impl SharedStringTable {
         }
 
         write_end_tag(writer, "sst");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(xml: &str) -> SharedStringTable {
+        let mut reader = Reader::from_str(xml);
+        reader.config_mut().trim_text(false);
+        let mut buf = Vec::new();
+        loop {
+            match reader.read_event_into(&mut buf) {
+                Ok(Event::Start(ref e)) if e.name().local_name().into_inner() == b"sst" => {
+                    let start = e.clone();
+                    let mut obj = SharedStringTable::default();
+                    obj.set_attributes(&mut reader, &start);
+                    return obj;
+                }
+                Ok(Event::Eof) => panic!("no <sst> in fixture"),
+                Ok(_) => {}
+                Err(e) => panic!("xml error: {e:?}"),
+            }
+        }
+    }
+
+    /// A self-closing `<si/>` is an EMPTY shared string and still owns its index.
+    ///
+    /// The reader handled only `Event::Start`, so `<si/>` was dropped and every
+    /// later string shifted down one. Cells index into this table by position,
+    /// so the failure mode is silently WRONG CELL TEXT, not a crash — which is
+    /// why it needs a test rather than a bug report.
+    #[test]
+    fn self_closing_si_keeps_later_strings_aligned() {
+        let obj = parse(concat!(
+            r#"<sst count="3" uniqueCount="3">"#,
+            "<si/>",
+            "<si><t>SECOND</t></si>",
+            "<si><t>THIRD</t></si>",
+            "</sst>",
+        ));
+        let items = obj.shared_string_item();
+        assert_eq!(items.len(), 3, "the empty <si/> must occupy index 0");
+        let text_at = |i: usize| {
+            items[i]
+                .text()
+                .map(|t| t.value().to_string())
+                .unwrap_or_default()
+        };
+        assert_eq!(text_at(0), "", "index 0 is the empty <si/>");
+        assert_eq!(text_at(1), "SECOND", "index 1 must NOT have shifted to 0");
+        assert_eq!(text_at(2), "THIRD");
     }
 }
