@@ -56,6 +56,11 @@ pub struct Workbook {
     /// computed fine before the round trip.
     iterative_calc:        Option<(u32, f64)>,
     iterate_enabled:       bool,
+    /// `<calcPr fullCalcOnLoad="1">` — tells Excel to recompute every formula
+    /// when the file opens. Set it whenever a formula is written WITHOUT a
+    /// cached result: the cache is the only thing a reader has, so without this
+    /// the cell (and anything charting it) shows blank until a manual recalc.
+    full_calc_on_load:     bool,
 }
 
 impl Workbook {
@@ -1043,6 +1048,20 @@ impl Workbook {
         self.iterative_calc
     }
 
+    /// Whether `<calcPr fullCalcOnLoad="1">` will be written.
+    #[inline]
+    #[must_use]
+    pub fn full_calc_on_load(&self) -> bool {
+        self.full_calc_on_load
+    }
+
+    /// Ask Excel to recalculate everything on open. Use when any formula is
+    /// written without a cached value — the reader has nothing else to go on.
+    #[inline]
+    pub fn set_full_calc_on_load(&mut self, enabled: bool) {
+        self.full_calc_on_load = enabled;
+    }
+
     /// Enable iterative calculation on write. `count`/`delta` are Excel's
     /// convergence limits; pass `None` to emit `iterate` alone and let Excel
     /// apply its own defaults.
@@ -1113,6 +1132,45 @@ impl AdjustmentCoordinateWithSheet for Workbook {
                 offset_col_num,
                 root_row_num,
                 offset_row_num,
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+mod full_calc_on_load_tests {
+    use crate::new_file;
+
+    /// A formula written WITHOUT a cached value is invisible to any reader that
+    /// does not recalculate — including a chart's own numCache. Excel must be
+    /// told to redo the lot on open, or the cell and its chart render blank.
+    ///
+    /// Task 129 (2026-08-28): 30 formulas exported as `<f>..</f><v/>` and the
+    /// football-field chart drew nothing.
+    #[test]
+    fn emits_full_calc_on_load_only_when_asked() {
+        for enabled in [false, true] {
+            let mut book = new_file();
+            book.set_full_calc_on_load(enabled);
+            assert_eq!(book.full_calc_on_load(), enabled);
+
+            let mut buf = Vec::new();
+            crate::writer::xlsx::write_writer(&book, &mut buf).expect("write");
+
+            let mut zip = zip::ZipArchive::new(std::io::Cursor::new(buf)).expect("zip");
+            let mut xml = String::new();
+            {
+                use std::io::Read as _;
+                zip.by_name("xl/workbook.xml")
+                    .expect("workbook.xml")
+                    .read_to_string(&mut xml)
+                    .expect("read");
+            }
+            let has = xml.contains(r#"fullCalcOnLoad="1""#);
+            assert_eq!(
+                has, enabled,
+                "fullCalcOnLoad present={has} but expected {enabled}; calcPr was: {}",
+                xml.split("<calcPr").nth(1).unwrap_or("<none>").split('>').next().unwrap_or("")
             );
         }
     }

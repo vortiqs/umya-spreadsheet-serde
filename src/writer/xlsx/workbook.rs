@@ -139,6 +139,13 @@ pub(crate) fn write<W: io::Seek + io::Write>(
     let iterate_count_str;
     let iterate_delta_str;
     let mut calc_attrs: crate::structs::AttrCollection = vec![("calcId", "122211").into()];
+    // A formula written without a cached value is invisible to every reader
+    // that does not recalculate — including chart caches. Ask Excel to redo the
+    // lot on open. (Our `calcId` is deliberately low, but that alone is not a
+    // contract; `fullCalcOnLoad` is.)
+    if wb.full_calc_on_load() {
+        calc_attrs.push(("fullCalcOnLoad", "1").into());
+    }
     if wb.iterate_enabled() {
         calc_attrs.push(("iterate", "1").into());
         if let Some((count, delta)) = wb.iterative_calc() {
