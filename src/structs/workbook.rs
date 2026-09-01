@@ -57,9 +57,9 @@ pub struct Workbook {
     iterative_calc:        Option<(u32, f64)>,
     iterate_enabled:       bool,
     /// `<calcPr fullCalcOnLoad="1">` — tells Excel to recompute every formula
-    /// when the file opens. Set it whenever a formula is written WITHOUT a
-    /// cached result: the cache is the only thing a reader has, so without this
-    /// the cell (and anything charting it) shows blank until a manual recalc.
+    /// when the file opens. Use it when a formula cache is missing, stale, or
+    /// produced by a different calculation engine. Cached values still serve
+    /// readers that do not recalculate.
     full_calc_on_load:     bool,
 }
 
@@ -1055,8 +1055,8 @@ impl Workbook {
         self.full_calc_on_load
     }
 
-    /// Ask Excel to recalculate everything on open. Use when any formula is
-    /// written without a cached value — the reader has nothing else to go on.
+    /// Ask Excel to recalculate everything on open. This can fill missing caches
+    /// and replace stale or engine-specific cached results with Excel's values.
     #[inline]
     pub fn set_full_calc_on_load(&mut self, enabled: bool) {
         self.full_calc_on_load = enabled;
@@ -1141,9 +1141,9 @@ impl AdjustmentCoordinateWithSheet for Workbook {
 mod full_calc_on_load_tests {
     use crate::new_file;
 
-    /// A formula written WITHOUT a cached value is invisible to any reader that
-    /// does not recalculate — including a chart's own numCache. Excel must be
-    /// told to redo the lot on open, or the cell and its chart render blank.
+    /// A missing formula cache is invisible to readers that do not recalculate;
+    /// a present cache can still be stale or engine-specific. The flag tells
+    /// Excel to replace either form with its own calculation on open.
     ///
     /// Task 129 (2026-08-28): 30 formulas exported as `<f>..</f><v/>` and the
     /// football-field chart drew nothing.

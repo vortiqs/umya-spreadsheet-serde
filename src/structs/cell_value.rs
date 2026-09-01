@@ -53,7 +53,10 @@ impl CellValue {
     #[inline]
     pub(crate) fn data_type_crate(&self) -> &str {
         match &self.formula {
-            Some(_) => "str",
+            Some(_) => match &self.raw_value {
+                CellRawValue::String(_) | CellRawValue::RichText(_) => "str",
+                _ => self.raw_value.data_type(),
+            },
             None => self.raw_value.data_type(),
         }
     }
@@ -267,6 +270,37 @@ impl CellValue {
         self
     }
 
+    /// Set a formula's cached result to a number without removing the formula.
+    #[inline]
+    pub fn set_formula_result_number<T>(&mut self, value: T) -> &mut Self
+    where
+        T: Into<f64>,
+    {
+        self.raw_value = CellRawValue::Numeric(value.into());
+        self
+    }
+
+    /// Set a formula's cached result to literal text without removing the formula.
+    #[inline]
+    pub fn set_formula_result_string<S: Into<String>>(&mut self, value: S) -> &mut Self {
+        self.raw_value = CellRawValue::String(value.into().into_boxed_str());
+        self
+    }
+
+    /// Set a formula's cached result to a boolean without removing the formula.
+    #[inline]
+    pub fn set_formula_result_bool(&mut self, value: bool) -> &mut Self {
+        self.raw_value = CellRawValue::Bool(value);
+        self
+    }
+
+    /// Set a formula's cached result to an error without removing the formula.
+    #[inline]
+    pub fn set_formula_result_error(&mut self, value: CellErrorType) -> &mut Self {
+        self.raw_value = CellRawValue::Error(value);
+        self
+    }
+
     #[inline]
     pub fn set_error<S: Into<String>>(&mut self, value: S) -> &mut Self {
         self.set_value_crate(value);
@@ -405,6 +439,30 @@ mod tests {
 
         obj.set_error("#NUM!");
         assert_eq!(obj.value(), "#NUM!");
+    }
+
+    #[test]
+    fn formula_result_type_comes_from_the_cached_raw_value() {
+        let mut obj = CellValue::default();
+        obj.set_formula("A1");
+
+        obj.set_formula_result_number(1);
+        assert_eq!(obj.data_type_crate(), "n");
+        obj.set_formula_result_string("01");
+        assert_eq!(obj.data_type_crate(), "str");
+        obj.set_formula_result_bool(true);
+        assert_eq!(obj.data_type_crate(), "b");
+        obj.set_formula_result_error(CellErrorType::Ref);
+        assert_eq!(obj.data_type_crate(), "e");
+
+        let mut rich_text = RichText::default();
+        rich_text.set_text("rich");
+        obj.raw_value = CellRawValue::RichText(rich_text);
+        assert_eq!(obj.data_type_crate(), "str");
+        assert_eq!(obj.formula(), "A1");
+
+        obj.remove_formula();
+        assert_eq!(obj.data_type_crate(), "s");
     }
 
     #[test]

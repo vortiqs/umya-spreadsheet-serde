@@ -26,6 +26,7 @@ use crate::{
         number_format::to_formatted_string,
     },
     structs::{
+        CellErrorType,
         CellFormula,
         CellFormulaValues,
         CellRawValue,
@@ -344,6 +345,33 @@ impl Cell {
     #[inline]
     pub fn set_formula_result_default<S: Into<String>>(&mut self, value: S) -> &mut Self {
         self.cell_value.set_formula_result_default(value);
+        self
+    }
+
+    #[inline]
+    pub fn set_formula_result_number<T>(&mut self, value: T) -> &mut Self
+    where
+        T: Into<f64>,
+    {
+        self.cell_value.set_formula_result_number(value);
+        self
+    }
+
+    #[inline]
+    pub fn set_formula_result_string<S: Into<String>>(&mut self, value: S) -> &mut Self {
+        self.cell_value.set_formula_result_string(value);
+        self
+    }
+
+    #[inline]
+    pub fn set_formula_result_bool(&mut self, value: bool) -> &mut Self {
+        self.cell_value.set_formula_result_bool(value);
+        self
+    }
+
+    #[inline]
+    pub fn set_formula_result_error(&mut self, value: CellErrorType) -> &mut Self {
+        self.cell_value.set_formula_result_error(value);
         self
     }
 
@@ -726,8 +754,7 @@ impl Cell {
                     write_text_node(writer, prm);
                 }
                 "e" => {
-                    let prm = "#VALUE!";
-                    write_text_node(writer, prm);
+                    write_text_node(writer, self.value());
                 }
                 _ => write_text_node_conversion(writer, self.value()),
             }
