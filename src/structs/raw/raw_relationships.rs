@@ -91,6 +91,24 @@ impl RawRelationships {
         self.relationship_list_mut()
     }
 
+    /// Look up a relationship by r:id, returning `None` when it is absent.
+    ///
+    /// The strict `relationship_by_rid` panics, which is right for a structural
+    /// relationship (a drawing, a chart, an OLE object): losing one silently
+    /// would corrupt the document. It is WRONG for an OPTIONAL relationship.
+    ///
+    /// Real workbooks ship dangling optional r:ids. Converters and export tools
+    /// routinely strip `printerSettings*.bin` and its `<Relationship>` entry
+    /// while leaving `<pageSetup r:id="rId1"/>` behind, so the sheet references
+    /// an rId its .rels never defines. Excel opens such files without complaint.
+    /// Panicking there discards an entire workbook because a print-layout blob
+    /// for a printer nobody has is missing.
+    pub(crate) fn try_relationship_by_rid(&self, r_id: &str) -> Option<&RawRelationship> {
+        self.relationship_list()
+            .iter()
+            .find(|relationship| relationship.id() == r_id)
+    }
+
     pub(crate) fn relationship_by_rid(&self, r_id: &str) -> &RawRelationship {
         self.relationship_list()
             .iter()
