@@ -216,3 +216,38 @@ impl RawRelationships {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// `try_relationship_by_rid` must return `None` for an absent id rather than
+    /// panicking like its strict sibling.
+    ///
+    /// Real workbooks ship dangling OPTIONAL relationships: a tool rewrites the
+    /// file, drops `printerSettings*.bin` and its `<Relationship>` entry, and
+    /// leaves `<pageSetup r:id="rId1"/>` pointing at nothing. Excel opens those
+    /// files. Panicking there discarded the entire workbook -- observed
+    /// 2026-09-07 on two customer files whose eight worksheets each referenced an
+    /// rId1 that no .rels defined and no printerSettings part backed.
+    #[test]
+    fn try_relationship_by_rid_returns_none_when_absent() {
+        let mut rels = RawRelationships::default();
+        let mut present = RawRelationship::default();
+        present.set_id("rId2");
+        rels.add_relationship_list(present);
+
+        assert!(
+            rels.try_relationship_by_rid("rId2").is_some(),
+            "a defined relationship must still resolve"
+        );
+        assert!(
+            rels.try_relationship_by_rid("rId1").is_none(),
+            "a dangling relationship must be None, not a panic"
+        );
+        assert!(
+            RawRelationships::default().try_relationship_by_rid("rId1").is_none(),
+            "an empty .rels must also yield None"
+        );
+    }
+}
