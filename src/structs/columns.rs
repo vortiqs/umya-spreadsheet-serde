@@ -207,7 +207,18 @@ impl Columns {
         if column.best_fit.value() {
             attributes.push(("bestFit", column.best_fit.value_string()).into());
         }
-        attributes.push(("customWidth", "1").into());
+        // 🔑 Conditional, like `hidden` and `bestFit` above. This was hardcoded to "1",
+        // which marked EVERY column as having an authored width -- including ones that
+        // only inherit the sheet default. Excel stops autofitting a column whose width
+        // is authored, so open-and-save silently changed layout behaviour on columns the
+        // user never touched.
+        //
+        // 🪤 The hardcode predates the reader keeping `customWidth` (40c5ffe8); what that
+        // commit changed is that the read side now carries a value for the write side to
+        // contradict. Round-tripping `customWidth="false"` back out as `"1"` is the bug.
+        if column.custom_width.value() {
+            attributes.push(("customWidth", column.custom_width.value_string()).into());
+        }
         let xf_index_str: String;
         let xf_index = stylesheet.set_style(column.style());
         if xf_index > 0 {

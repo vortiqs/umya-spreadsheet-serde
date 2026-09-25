@@ -100,6 +100,11 @@ impl Column {
     #[inline]
     pub fn set_width(&mut self, value: f64) -> &mut Self {
         self.width.set_value(value);
+        // Setting a width IS authoring it -- mirrors `Row::set_height`, which has set
+        // `custom_height` all along. Without this, making the writer conditional would
+        // regress every programmatic caller: the width would be written but marked
+        // inherited, and Excel would autofit over it.
+        self.custom_width.set_value(true);
         self
     }
 
@@ -184,6 +189,17 @@ impl Column {
         self.custom_width.value()
     }
 
+    /// Mark this column's width as authored, or as inherited from the sheet default.
+    ///
+    /// `set_width` already marks it authored, which is what a caller almost always wants.
+    /// This is the escape hatch for the other case: setting a width while leaving Excel
+    /// free to autofit it. Mirrors `Row::set_custom_height`.
+    #[inline]
+    pub fn set_custom_width(&mut self, value: bool) -> &mut Self {
+        self.custom_width.set_value(value);
+        self
+    }
+
     #[inline]
     #[must_use]
     pub fn auto_width(&self) -> bool {
@@ -240,11 +256,17 @@ impl Column {
 
     #[inline]
     pub(crate) fn hash_code(&self) -> String {
+        // 🚨 Every attribute `Columns::write_to` emits must appear here. This hash is what
+        // decides whether adjacent columns coalesce into a single `<col min= max=>` run, and
+        // a run is written from the FIRST column of the group -- so an attribute that varies
+        // within a group but is missing from the hash gets silently overwritten with its
+        // neighbour's value. `custom_width` was safe to omit only while it was hardcoded.
         crate::helper::utils::md5_hash(format!(
-            "{}{}{}",
+            "{}{}{}{}",
             self.width.value_string(),
             self.hidden.value_string(),
             self.best_fit.value_string(),
+            self.custom_width.value_string(),
         ))
     }
 
