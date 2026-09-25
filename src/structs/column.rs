@@ -43,6 +43,8 @@ pub struct Column {
     pub(crate) best_fit: BooleanValue,
     style:               Box<Style>,
     auto_width:          BooleanValue,
+    /// The `customWidth` attribute: whether `width` was set rather than inherited.
+    pub(crate) custom_width: BooleanValue,
 }
 
 impl Default for Column {
@@ -57,6 +59,7 @@ impl Default for Column {
             best_fit: BooleanValue::default(),
             style: Box::new(Style::default()),
             auto_width: BooleanValue::default(),
+            custom_width: BooleanValue::default(),
         }
     }
 }
@@ -168,6 +171,19 @@ impl Column {
         self
     }
 
+    /// Whether this column's width was authored rather than inherited from the sheet default.
+    ///
+    /// A `<cols>` entry covers a range, and a sheet commonly closes the run with one span
+    /// reaching column 16384 whose only purpose is to carry `defaultColWidth`; that span sets
+    /// `customWidth="false"`. Reading `width` alone cannot separate those columns from authored
+    /// ones, because Excel writes `width` rounded to two decimals while `defaultColWidth` keeps
+    /// full precision. Absent from the XML this reads `false`, matching the OOXML default.
+    #[inline]
+    #[must_use]
+    pub fn custom_width(&self) -> bool {
+        self.custom_width.value()
+    }
+
     #[inline]
     #[must_use]
     pub fn auto_width(&self) -> bool {
@@ -247,6 +263,7 @@ impl Column {
         set_string_from_xml!(self, e, width, "width");
         set_string_from_xml!(self, e, hidden, "hidden");
         set_string_from_xml!(self, e, best_fit, "bestFit");
+        set_string_from_xml!(self, e, custom_width, "customWidth");
 
         if let Some(v) = get_attribute(e, b"style") {
             let style = stylesheet.style(v.parse::<usize>().unwrap());
@@ -272,5 +289,51 @@ impl AdjustmentValue for Column {
     #[inline]
     fn is_remove_value(&self, root_num: u32, offset_num: u32) -> bool {
         self.col_num.value() >= root_num && self.col_num.value() < root_num + offset_num
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn read_col(attributes: &str) -> Column {
+        let content = format!("col {attributes}");
+        let element = BytesStart::from_content(content, 3);
+        let mut reader = Reader::from_str("");
+        let mut column = Column::default();
+        column.set_attributes(&mut reader, &element, &Stylesheet::default());
+        column
+    }
+
+    /// `customWidth` distinguishes an authored width from an inherited one.
+    ///
+    /// A `<cols>` run is a set of ranges, and a sheet commonly closes it with one span reaching
+    /// column 16384 that exists only to carry `defaultColWidth`. That span says
+    /// `customWidth="false"`. Without the attribute a reader cannot tell those columns from real
+    /// ones: `width` is written rounded to two decimals while `defaultColWidth` keeps full
+    /// precision, so comparing the two does not separate them either.
+    #[test]
+    fn custom_width_reports_whether_the_width_was_authored() {
+        assert!(
+            read_col(r#"min="1" max="1" width="18.17" customWidth="true""#).custom_width(),
+            "an authored width is marked custom"
+        );
+        assert!(
+            !read_col(r#"min="1" max="16384" width="10.83" customWidth="false""#).custom_width(),
+            "a span carrying the sheet default is not custom"
+        );
+        assert!(
+            !read_col(r#"min="1" max="1" width="18.17""#).custom_width(),
+            "absent from the XML it reads false, matching the OOXML default"
+        );
+    }
+
+    /// The width itself is still read in every case; `custom_width` only qualifies it.
+    #[test]
+    fn reading_custom_width_leaves_the_other_attributes_alone() {
+        let column = read_col(r#"min="1" max="1" width="18.17" customWidth="true" hidden="true""#);
+        assert!((column.width() - 18.17).abs() < 1e-9);
+        assert!(column.hidden());
+        assert!(column.custom_width());
     }
 }
