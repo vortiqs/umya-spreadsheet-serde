@@ -80,6 +80,20 @@ impl SheetFormatProperties {
         self.default_column_width.value()
     }
 
+    /// `defaultColWidth` as the sheet states it, or `None` when the sheet omits it.
+    ///
+    /// [`Self::default_column_width`] returns `0.0` for an absent attribute, which a caller
+    /// cannot tell from a sheet that really does declare `defaultColWidth="0"`. The difference
+    /// matters to anyone deciding whether a column inherits a sheet default or an application
+    /// one: reading the `0` as a width collapses every column to nothing.
+    #[inline]
+    #[must_use]
+    pub fn default_column_width_opt(&self) -> Option<f64> {
+        self.default_column_width
+            .has_value()
+            .then(|| self.default_column_width.value())
+    }
+
     #[inline]
     #[must_use]
     #[deprecated(since = "3.0.0", note = "Use default_column_width()")]
@@ -287,5 +301,49 @@ impl SheetFormatProperties {
         }
 
         write_start_tag(writer, "sheetFormatPr", attributes, true);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn read_props(attributes: &str) -> SheetFormatProperties {
+        let content = format!("sheetFormatPr {attributes}");
+        let element = BytesStart::from_content(content, 14);
+        let mut reader = Reader::from_str("");
+        let mut props = SheetFormatProperties::default();
+        props.set_attributes(&mut reader, &element);
+        props
+    }
+
+    /// An absent `defaultColWidth` is not a width of zero.
+    ///
+    /// `default_column_width` folds both to `0.0`, so a caller deciding whether a column
+    /// inherits a sheet default or an application one cannot tell them apart -- and reading the
+    /// absent case as a width collapses every inheriting column to nothing.
+    #[test]
+    fn default_column_width_opt_separates_absent_from_zero() {
+        assert_eq!(
+            read_props(r#"defaultRowHeight="15" defaultColWidth="10.83""#)
+                .default_column_width_opt(),
+            Some(10.83),
+            "a declared width is reported as declared"
+        );
+        assert_eq!(
+            read_props(r#"defaultRowHeight="15""#).default_column_width_opt(),
+            None,
+            "an absent attribute is None, not Some(0.0)"
+        );
+        assert_eq!(
+            read_props(r#"defaultRowHeight="15" defaultColWidth="0""#).default_column_width_opt(),
+            Some(0.0),
+            "a declared zero is still a declaration"
+        );
+        assert_eq!(
+            read_props(r#"defaultRowHeight="15""#).default_column_width(),
+            0.0,
+            "the existing accessor keeps folding absent to zero"
+        );
     }
 }
